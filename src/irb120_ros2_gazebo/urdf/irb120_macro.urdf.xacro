@@ -486,6 +486,11 @@
           <box size="0.001 0.001 0.001" />
         </geometry>
       </visual>
+      <collision>
+        <geometry>
+          <box size="0.001 0.001 0.001" />
+        </geometry>
+      </collision>
     </link>
 
     <joint name="EE_egp64_joint" type="prismatic">

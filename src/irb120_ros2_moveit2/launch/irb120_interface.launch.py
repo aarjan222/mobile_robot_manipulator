@@ -41,9 +41,6 @@ def load_yaml(package_name, file_path):
 
 
 def generate_launch_description():
-
-    # *********************** Gazebo *********************** #
-
     # DECLARE Gazebo WORLD file:
     irb120_ros2_gazebo = os.path.join(
         get_package_share_directory('irb120_ros2_gazebo'),
@@ -131,7 +128,6 @@ def generate_launch_description():
         arguments=["egp64_finger_right_controller",
                    "-c", "/controller_manager"],
     )
-    # === SCHUNK EGP-64 === #
 
     # *********************** MoveIt!2 *********************** #
 
@@ -141,11 +137,11 @@ def generate_launch_description():
 
     # *** PLANNING CONTEXT *** #
     # Robot description, SRDF:
-    robot_description_semantic_config = load_file(
-        "irb120_ros2_moveit2", "config/irb120egp64.srdf")
-
     # robot_description_semantic_config = load_file(
-    #     "irb120_ros2_moveit2", "config/mobile_robot_manipulator.srdf")
+    #     "irb120_ros2_moveit2", "config/irb120egp64.srdf")
+
+    robot_description_semantic_config = load_file(
+        "irb120_ros2_moveit2", "config/mobile_robot_manipulator.srdf")
 
     robot_description_semantic = {
         "robot_description_semantic": robot_description_semantic_config}
