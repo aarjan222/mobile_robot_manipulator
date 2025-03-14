@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<robot name="irb120" xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <!-- END-EFFECTOR:  -->
+  <xacro:arg name="EE_no" default="false" />
+  <xacro:property name="EE_no" value="$(arg EE_no)" />
+  <xacro:arg name="EE_schunk" default="false" />
+  <xacro:property name="EE_schunk" value="$(arg EE_schunk)" />
+
+
+  <!-- Include XACRO-MACRO file of the IRB120: -->
+  <xacro:include filename="$(find irb120_ros2_gazebo)/urdf/irb120_macro.urdf.xacro" />
+  <xacro:irb120
+    prefix=""
+    EE_no="${EE_no}"
+    EE_schunk="${EE_schunk}"
+  />
+
+  <!-- Include mobile base robot xacro files: -->
+  <xacro:include filename="$(find mobile_manipulator_body)/urdf/robot_base.urdf.xacro" />
+
+
+  <!-- Gazebo WORLD link: -->
+  <!-- <link name="world" />
+
+  <joint name="world-base_link-fixed" type="fixed">
+    <parent link="world" />
+    <child link="base_link" />
+    <child link="base_footprint" />
+  </joint> -->
+
+</robot>
