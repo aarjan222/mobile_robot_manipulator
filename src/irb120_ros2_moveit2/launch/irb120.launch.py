@@ -70,10 +70,6 @@ def generate_launch_description():
                               'urdf',
                               'irb120.urdf.xacro')
     
-    # xacro_file = os.path.join(irb120_description_path,
-    #                           'urdf',
-    #                           'mobile_robot_abb_manipulator.urdf.xacro')
-    
     # Generate ROBOT_DESCRIPTION for ABB-IRB120:
     doc = xacro.parse(open(xacro_file))
     xacro.process_doc(doc, mappings={
@@ -145,11 +141,11 @@ def generate_launch_description():
         "rviz_file", default_value="False", description="Load RVIZ file.")
 
     # *** PLANNING CONTEXT *** #
-    robot_description_semantic_config = load_file(
-        "irb120_ros2_moveit2", "config/irb120egp64.srdf")
-
     # robot_description_semantic_config = load_file(
-    #     "irb120_ros2_moveit2", "config/mobile_robot_manipulator.srdf")
+    #     "irb120_ros2_moveit2", "config/irb120egp64.srdf")
+
+    robot_description_semantic_config = load_file(
+        "irb120_ros2_moveit2", "config/mobile_robot_manipulator.srdf")
 
     robot_description_semantic = {
         "robot_description_semantic": robot_description_semantic_config}
