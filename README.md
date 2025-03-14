@@ -5,34 +5,31 @@ rm -rf install/ log/ build/; colcon build --symlink-install
 
 ### Source the repo
 ```
-source install/setup.bash; ros2 launch mobile_manipulator_body arm_gazebo_control.launch.py
+source install/setup.bash
+```
+
+### Launch file for Gazebo + Rviz2 + Moveit2 (Move base & robotic arm)
+```
+ros2 launch irb120_ros2_moveit2 irb120.launch.py
+```
+
+### Launch file for grasping the object
+```
+ros2 launch irb120_ros2_moveit2 irb120_interface.launch.py
+```
+
+### For spawning the object
+```
+ros2 run ros2_grasping spawn_object.py --package "ros2_grasping" --urdf "box.urdf" --name "box" --x 0.5 --y -0.3 --z 0.75
+```
+
+### For picking and placing the object
+```
+ros2 run ros2_execution ros2_execution.py --ros-args -p PROGRAM_FILENAME:="cubePP" -p ROBOT_MODEL:="irb120" -p EE_MODEL:="schunk"
 ```
 
 ### Drive the robot
 In another terminal
 ```
 ros2 run rqt_robot_steering rqt_robot_steering
-```
-
-### Moving the Robotic Arm
-Move robot arm to some fixed position
-```
-ros2 topic pub /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory '{
-  joint_names: ["arm_base_joint", "shoulder_joint", "bottom_wrist_joint", "elbow_joint", "top_wrist_joint"],
-  points: [{
-    positions: [-0.1, 0.5, 0.02, 0, 0],
-    time_from_start: {sec: 1, nanosec: 0}
-  }]
-}'
-```
-
-Move robot arm to home position
-```
-ros2 topic pub /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory '{
-  joint_names: ["arm_base_joint", "shoulder_joint", "bottom_wrist_joint", "elbow_joint", "top_wrist_joint"],
-  points: [{
-    positions: [0, 0, 0, 0, 0],
-    time_from_start: {sec: 1, nanosec: 0}
-  }]
-}'
 ```
