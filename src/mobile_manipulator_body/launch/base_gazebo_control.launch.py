@@ -21,7 +21,7 @@ def generate_launch_description():
                                               }])
 
     # Gazebo
-    world_file_name = 'world.world'
+    world_file_name = 'office_small.world'
     # world_file_name = 'slamworld.world'
     # world_file_name = 'turtlebot3_world.world'
     world = os.path.join(get_package_share_directory(
