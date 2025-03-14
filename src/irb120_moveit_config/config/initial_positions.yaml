@@ -1,0 +1,11 @@
+# Default initial positions for mobile_robot_manipulator's ros2_control fake system
+
+initial_positions:
+  egp64_finger_left_joint: 0
+  egp64_finger_right_joint: 0
+  joint_1: 0
+  joint_2: 0
+  joint_3: 0
+  joint_4: 0
+  joint_5: 0
+  joint_6: 0
