@@ -1,3 +1,9 @@
+### Download World Repo and add path to environment variable
+```sh
+git clone https://github.com/leonhartyao/gazebo_models_worlds_collection.git
+export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:<path to this repo>/models
+export GAZEBO_RESOURCE_PATH=$GAZEBO_RESOURCE_PATH:<path to this repo>/worlds
+```
 ### Build the repo
 ```
 rm -rf install/ log/ build/; colcon build --symlink-install
@@ -35,4 +41,14 @@ ros2 topic pub /arm_controller/joint_trajectory trajectory_msgs/msg/JointTraject
     time_from_start: {sec: 1, nanosec: 0}
   }]
 }'
+```
+
+### For Localization and Navigation
+(slam_toolbox for localization)`
+```sh
+ros2 launch slam_toolbox online_async_launch.py slam_params_file:=./src/mobile_robot_manipulator/src/mobile_manipulator_body/config/mapper_params_online_async.yaml use_sim_time:=true
+```
+(nav2 for navigation)
+```sh
+ros2 launch nav2_bringup navigation_launch.py use_sim_time:=true map_subscribe_transient_local:=true
 ```

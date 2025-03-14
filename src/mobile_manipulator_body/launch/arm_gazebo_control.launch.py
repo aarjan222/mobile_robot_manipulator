@@ -35,7 +35,7 @@ def generate_launch_description():
                      arguments=['-d', rviz_config_file])
 
     # Gazebo
-    world_file_name = 'empty.world'
+    world_file_name = 'hello.world'
     world = os.path.join(get_package_share_directory(
         'mobile_manipulator_body'), 'worlds', world_file_name)
     gazebo_node = ExecuteProcess(
@@ -52,4 +52,10 @@ def generate_launch_description():
              'active', 'arm_controller'],
         output='screen')
 
-    return LaunchDescription([robot_state_publisher, spawn_entity_robot, gazebo_node, load_joint_state_broadcaster, load_arm_controller])
+    return LaunchDescription([
+        robot_state_publisher, 
+        spawn_entity_robot, 
+        gazebo_node, 
+        load_joint_state_broadcaster, 
+        load_arm_controller
+        ])
