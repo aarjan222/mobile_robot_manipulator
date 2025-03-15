@@ -44,7 +44,7 @@ def generate_launch_description():
     irb120_ros2_gazebo = os.path.join(
         get_package_share_directory('irb120_ros2_gazebo'),
         'worlds',
-        'irb120.world')
+        'hello.world')
 
     # irb120_ros2_gazebo = os.path.join(
     #     get_package_share_directory('irb120_ros2_gazebo'),

@@ -221,14 +221,14 @@
       <ray>
         <scan>
           <horizontal>
-            <samples>360</samples>
-            <min_angle>0.00</min_angle>
-            <max_angle>6.28000</max_angle>
+            <samples>270</samples>
+            <min_angle>-2.356</min_angle>
+            <max_angle>2.356</max_angle>
           </horizontal>
         </scan>
         <range>
           <min>0.12</min>
-          <max>3.5</max>
+          <max>6</max>
         </range>
         <noise>
           <type>gaussian</type>
@@ -246,6 +246,68 @@
       </plugin>
     </sensor>
   </gazebo>
+
+
+  <!--  -->
+
+  <joint name="camera_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="camera_link"/>
+    <origin xyz="0.325 0 0.15" rpy="0 0 0"/>
+  </joint>
+  <link name="camera_link">
+      <visual>
+      <origin xyz="0 0 0.0" rpy="0 1.57 0" />
+      <geometry>
+        <mesh filename="file://$(find mobile_manipulator_body)/meshes/cam.stl"
+          scale="0.001 0.001 0.001" />
+      </geometry>
+      <!-- <material name="dark" /> -->
+      <material name= "">
+        <color rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.0" rpy="0 1.57 0" />
+      <geometry>
+        <mesh filename="file://$(find mobile_manipulator_body)/meshes/cam.stl"
+          scale="0.001 0.001 0.001" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="camera_optical_joint" type="fixed">  
+    <parent link="camera_link"/>
+    <child link="camera_link_optical"/>
+    <origin xyz="0 0 0" rpy="${-pi/2} 0 ${-pi/2}"/>
+  </joint>
+
+  <link name="camera_link_optical"></link>
+
+  <gazebo reference="camera_link">
+    <material>Gazebo/Red</material>
+    <sensor name="camera" type="camera">
+      <pose> 0 0 0 0 0 0 </pose>
+      <visualize>true</visualize>
+      <update_rate>10</update_rate>
+      <camera>
+        <horizontal_fov>1.089</horizontal_fov>
+        <image>
+          <format>R8G8B8</format>
+          <width>640</width>
+          <height>480</height>
+        </image>
+        <clip>
+          <near>0.05</near>
+          <far>8.0</far>
+        </clip>
+      </camera>
+      <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
+          <frame_name>camera_link_optical</frame_name>
+      </plugin>
+    </sensor>
+  </gazebo>
+            <!--  -->
 
   <joint name="front_left_wheel_joint" type="continuous">
     <axis xyz="0 1 0" />
@@ -318,34 +380,34 @@
   </gazebo>
 
   <gazebo reference="front_left_wheel">
-    <mu1 value="1.0" />
-    <mu2 value="1.0" />
-    <kp value="10000000.0" />
-    <kd value="1.0" />
+    <mu1 value="0.8" />
+    <mu2 value="0.8" />
+    <kp value="100000.0" />
+    <kd value="10.0" />
     <fdir1 value="1 0 0" />
   </gazebo>
 
   <gazebo reference="front_right_wheel">
-    <mu1 value="1.0" />
-    <mu2 value="1.0" />
-    <kp value="10000000.0" />
-    <kd value="1.0" />
+    <mu1 value="0.8" />
+    <mu2 value="0.8" />
+    <kp value="100000.0" />
+    <kd value="10.0" />
     <fdir1 value="1 0 0" />
   </gazebo>
 
   <gazebo reference="rear_left_wheel">
-    <mu1 value="1.0" />
-    <mu2 value="1.0" />
-    <kp value="10000000.0" />
-    <kd value="1.0" />
+    <mu1 value="0.8" />
+    <mu2 value="0.8" />
+    <kp value="100000.0" />
+    <kd value="10.0" />
     <fdir1 value="1 0 0" />
   </gazebo>
 
-  <gazebo reference="rear_left_wheel">
-    <mu1 value="1.0" />
-    <mu2 value="1.0" />
-    <kp value="10000000.0" />
-    <kd value="1.0" />
+  <gazebo reference="rear_right_wheel">
+    <mu1 value="0.8" />
+    <mu2 value="0.8" />
+    <kp value="100000.0" />
+    <kd value="10.0" />
     <fdir1 value="1 0 0" />
   </gazebo>
 

@@ -39,6 +39,9 @@ from std_msgs.msg import String
 import os
 import ast
 import time
+from geometry_msgs.msg import PoseStamped
+from nav2_msgs.action import NavigateToPose
+from rclpy.task import Future
 
 # Import ACTIONS:
 from ros2_data.action import MoveJ
@@ -561,6 +564,50 @@ class DetacherPUB(Node):
         # Declare PUBLISHER:
         self.publisher_ = self.create_publisher(String, "ros2_Detach", 5) #(msgType, TopicName, QueueSize)
 
+class PosePub(Node):
+    def __init__(self):
+        super().__init__('pose_publisher')
+        self.publisher = self.create_publisher(PoseStamped, 'goal_pose', 10)
+        # self.timer = self.create_timer(1.0, self.pub_pose)  # Publish every second
+
+    def pub_pose(self, pose):
+        self.publisher.publish(pose)
+        self.get_logger().info(f'Published Pose: {pose}')
+        
+class NavigationClient(Node):
+    def __init__(self):
+        super().__init__('navigation_client')
+        self.client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
+        self.goal_future = None
+
+    def send_goal(self, goal_pose):
+        goal_msg = NavigateToPose.Goal()
+        goal_msg.pose = goal_pose
+
+        self.client.wait_for_server()
+        self.goal_future = self.client.send_goal_async(goal_msg, feedback_callback=self.feedback_callback)
+        self.goal_future.add_done_callback(self.goal_response_callback)
+
+    def goal_response_callback(self, future):
+        goal_handle = future.result()
+        if not goal_handle.accepted:
+            self.get_logger().info("Goal rejected")
+            return
+        
+        self.get_logger().info("Goal accepted")
+        self.result_future = goal_handle.get_result_async()
+        self.result_future.add_done_callback(self.result_callback)
+
+    def result_callback(self, future: Future):
+        result = future.result()
+        if result:
+            self.get_logger().info("Goal reached successfully!")
+        else:
+            self.get_logger().info("Goal failed or was canceled.")
+
+    def feedback_callback(self, feedback_msg):
+        self.get_logger().info(f"Remaining distance: {feedback_msg.feedback.distance_remaining:.2f} meters")
+
 # ===== INPUT PARAMETERS ===== #
 
 # CLASS: Input program (.txt) as ROS2 PARAMETER:
@@ -729,6 +776,10 @@ def main(args=None):
     MoveYPR_CLIENT = MoveYPRclient()
     MoveROT_CLIENT = MoveROTclient()
     MoveRP_CLIENT = MoveRPclient()
+
+    pose_publisher = PosePub()
+    navigate_CLIENT = NavigationClient()
+
 
     #  3. GET PROGRAM FILENAME:
     print("")
@@ -1230,19 +1281,79 @@ def main(args=None):
                     print("The program will be closed. Bye!")
                     break
 
+        elif (trigger['action'] == 'navigate'):
+            
+            print("")
+            print("STEP NUMBER " + str(i) + " -> navigate:")
+            print(trigger['value'])
+
+            msg = PoseStamped()
+            msg.header.stamp = pose_publisher.get_clock().now().to_msg()
+            msg.header.frame_id = "map"  # Reference frame
+
+            msg.pose.position.x = trigger['value']['x']
+            msg.pose.position.y = trigger['value']['y']
+            msg.pose.position.z = 0.0
+
+            msg.pose.orientation.x = 0.0
+            msg.pose.orientation.y = 0.0
+            msg.pose.orientation.z = 0.0
+            msg.pose.orientation.w = trigger['value']['w']  # No rotation (identity quaternion)
+            pose_publisher.pub_pose(msg)
+
+            # if rclpy.ok():
+            #     rclpy.spin_once(pose_publisher, timeout_sec=5)
+                
+
+
+            # goal_pose = PoseStamped()
+            # goal_pose.header.frame_id = "map"
+            # goal_pose.header.stamp = navigate_CLIENT.get_clock().now().to_msg()
+            # goal_pose.pose.position.x = trigger['value']['x']
+            # goal_pose.pose.position.y = trigger['value']['y']
+            # goal_pose.pose.orientation.w = trigger['value']['w'] 
+
+            # navigate_CLIENT.send_goal(goal_pose)
+
+            # if rclpy.ok():
+            #     rclpy.spin_once(navigate_CLIENT, timeout_sec=5)
+            #     if (RES != "null"):
+            #         break
+            
+            rclpy.spin(navigate_CLIENT)
+            print ("Result of navigate ACTION CALL is -> { " + RES + " }")
+            
+            # if (RES == "navigate:SUCCESS"):
+            #     print("navigate ACTION in step number -> " + str(i) + " successfully executed.")
+            #     RES = "null"
+            # else:
+            #     print("navigate ACTION in step number -> " + str(i) + " failed.")
+            #     print("The program will be closed. Bye!")
+            #     nodeLOG.get_logger().info("ERROR: Program finished since navigate ACTION in step number -> " + str(i) + " failed.")
+            #     break
+
+            print("Robot moved successfully.")
         else:
-            print("Step number " + str(i) + " -> Action type not identified. Please check.")
+            print("Step number " + str(i) + "with action" + trigger['action'] + " -> Action type not identified. Please check.")
             print("The program will be closed. Bye!")
             nodeLOG.get_logger().info("ERROR: Program finished since ACTION NAME in step number -> " + str(i) + " was not identified.")
             break
+
+
 
         #time.sleep(1)
 
     print("")
     print("SEQUENCE EXECUTION FINISHED!")
     print("Program will be closed. Bye!")
+
+
     nodeLOG.get_logger().info("SUCESS: Program execution sucessfully finished.")
     nodeLOG.destroy_node()
+
+    pose_publisher.destroy_node()
+    rclpy.shutdown()
+
     print("Closing... BYE!")
     time.sleep(5)
         

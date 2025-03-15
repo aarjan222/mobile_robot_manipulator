@@ -45,7 +45,7 @@ def generate_launch_description():
     irb120_ros2_gazebo = os.path.join(
         get_package_share_directory('irb120_ros2_gazebo'),
         'worlds',
-        'irb120.world')
+        'hello.world')
     # DECLARE Gazebo LAUNCH file:
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([os.path.join(
@@ -78,6 +78,25 @@ def generate_launch_description():
                         arguments=['-topic', 'robot_description',
                                    '-entity', 'irb120'],
                         output='screen')
+
+
+    #************slam+nav2**********************#
+
+    slam_params_file = os.path.join(get_package_share_directory('mobile_manipulator_body'), 'config', 'mapper_params_online_async.yaml')   
+    slam_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('slam_toolbox'), 'launch', 'online_async_launch.py')
+        ),
+        launch_arguments={'slam_params_file': slam_params_file, 'use_sim_time': 'true'}.items(),
+    )
+
+    # Navigation2 Node
+    nav2_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('nav2_bringup'), 'launch', 'navigation_launch.py')
+        ),
+        launch_arguments={'use_sim_time': 'true'}.items(),
+    )
 
     # ***** STATIC TRANSFORM ***** #
     # NODE -> Static TF:
@@ -325,6 +344,8 @@ def generate_launch_description():
             # ROS2_CONTROL:
             static_tf,
             robot_state_publisher,
+            
+
 
             # ROS2 Controllers:
             RegisterEventHandler(
@@ -335,6 +356,7 @@ def generate_launch_description():
                     ]
                 )
             ),
+            
             RegisterEventHandler(
                 OnProcessExit(
                     target_action=joint_state_broadcaster_spawner,
@@ -394,6 +416,9 @@ def generate_launch_description():
 
                     ]
                 )
-            )
+            ),
+
+            # slam_node
+
         ]
     )
