@@ -44,13 +44,18 @@ def generate_launch_description():
     irb120_ros2_gazebo = os.path.join(
         get_package_share_directory('irb120_ros2_gazebo'),
         'worlds',
-        'irb120.world')
+        'new_world_2.world')
+
+    # irb120_ros2_gazebo = os.path.join(
+    #     get_package_share_directory('irb120_ros2_gazebo'),
+    #     'worlds',
+    #     'irb120.world')
 
     # irb120_ros2_gazebo = os.path.join(
     #     get_package_share_directory('irb120_ros2_gazebo'),
     #     'worlds',
     #     'office_small.world')
-    
+
     # DECLARE Gazebo LAUNCH file:
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([os.path.join(
@@ -69,7 +74,7 @@ def generate_launch_description():
     xacro_file = os.path.join(irb120_description_path,
                               'urdf',
                               'irb120.urdf.xacro')
-    
+
     # Generate ROBOT_DESCRIPTION for ABB-IRB120:
     doc = xacro.parse(open(xacro_file))
     xacro.process_doc(doc, mappings={
