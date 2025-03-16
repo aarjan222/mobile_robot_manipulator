@@ -1,4 +1,5 @@
-{'action': 'navigate', 'value': {'x': 1.0, 'y': -0.0, 'w': 0.0}}
+{'action': 'navigate', 'value': {'x': 2.8, 'y': -1.5, 'w': 0.0}}
+{'action': 'MoveXYZ', 'value': {'positionx': 3.5, 'positiony': -1.5, 'positionz': 1.4}, 'speed': 1.0}
 {'action': 'MoveJ', 'value': {'joint1': 0.0, 'joint2': 0.0, 'joint3': 0.0, 'joint4': 0.0, 'joint5': 0.0, 'joint6': 0.0}, 'speed': 1.0}
 {'action': 'MoveJ', 'value': {'joint1': -58.10, 'joint2': 25.75, 'joint3': 27.17, 'joint4': -63.59, 'joint5': -71.41, 'joint6': 77.67}, 'speed': 1.0}
 {'action': 'MoveL', 'value': {'movex': 0.06, 'movey': 0.0, 'movez': -0.1}, 'speed': 1.0}

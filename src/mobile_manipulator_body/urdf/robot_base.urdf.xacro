@@ -24,7 +24,7 @@
   <link name="base_footprint">
     <inertial>
       <origin xyz="0.0030946 4.78250032638821E-11 0.053305" rpy="0 0 0" />
-      <mass value="500" />
+      <mass value="100" />
       <inertia
         ixx="7.74276574699151"
         ixy="-10.3781944357671E-10"
@@ -171,6 +171,50 @@
     </collision>
   </link>
 
+
+
+<!-- CASTER WHEEL LINK -->
+
+    <!-- <joint name="caster_wheel_joint" type="fixed">
+        <parent link="base_link"/>
+        <child link="caster_wheel"/>
+        <origin xyz="0.24 0 0"/>
+    </joint>
+
+
+    <link name="caster_wheel">
+        <visual>
+            <geometry>
+                <sphere radius="0.1"/>
+            </geometry>
+            <material name="black"/>
+        </visual>
+        <collision>
+            <geometry>
+                <sphere radius="0.1"/>
+            </geometry>
+        </collision>
+       <inertial>
+        <origin xyz="-4.1867E-18 0.0068085 -1.65658661799998E-18" rpy="0 0 0" />
+        <mass
+          value="1.0" />
+        <inertia
+          ixx="0.05"
+          ixy="0.05"
+          ixz="0.05"
+          iyy="0.05"
+          iyz="0.-19"
+          izz="0.00856502765719703" />
+        </inertial>
+    </link>
+
+    <gazebo reference="caster_wheel">
+        <material>Gazebo/Black</material>
+        <mu1 value="0.001"/>
+        <mu2 value="0.001"/>
+    </gazebo> -->
+
+
   <link name="imu_link" />
 
   <joint name="imu_joint" type="fixed">
@@ -216,7 +260,7 @@
     <sensor name="laser" type="ray">
       <pose> 0 0 0 0 0 0 </pose>
       <always_on>true</always_on>
-      <visualize>true</visualize>
+      <visualize>false</visualize>
       <update_rate>5</update_rate>
       <ray>
         <scan>
@@ -288,7 +332,7 @@
     <material>Gazebo/Red</material>
     <sensor name="camera" type="camera">
       <pose> 0 0 0 0 0 0 </pose>
-      <visualize>true</visualize>
+      <visualize>false</visualize>
       <update_rate>10</update_rate>
       <camera>
         <horizontal_fov>1.089</horizontal_fov>
@@ -309,7 +353,7 @@
   </gazebo>
             <!--  -->
 
-  <joint name="front_left_wheel_joint" type="continuous">
+  <joint name="front_left_wheel_joint" type="fixed">
     <axis xyz="0 1 0" />
     <parent link="base_link" />
     <child link="front_left_wheel" />
@@ -317,7 +361,7 @@
   </joint>
 
 
-  <joint name="front_right_wheel_joint" type="continuous">
+  <joint name="front_right_wheel_joint" type="fixed">
     <axis xyz="0 1 0" />
     <parent link="base_link" />
     <child link="front_right_wheel" />
@@ -347,7 +391,7 @@
       <wheel_diameter>0.2</wheel_diameter>
 
       <!-- Limits -->
-      <max_wheel_torque>200</max_wheel_torque>
+      <max_wheel_torque>500</max_wheel_torque>
       <max_wheel_acceleration>10.0</max_wheel_acceleration>
 
       <!-- Output -->
@@ -360,7 +404,7 @@
     </plugin>
   </gazebo>
 
-  <gazebo>
+  <!-- <gazebo>
     <plugin name="front_wheel" filename="libgazebo_ros_diff_drive.so">
       <left_joint>front_left_wheel_joint</left_joint>
       <right_joint>front_right_wheel_joint</right_joint>
@@ -377,41 +421,44 @@
       <publish_odom_tf>true</publish_odom_tf>
       <publish_wheel_tf>true</publish_wheel_tf>
     </plugin>
-  </gazebo>
+  </gazebo> -->
 
-  <gazebo reference="front_left_wheel">
-    <mu1 value="0.8" />
-    <mu2 value="0.8" />
-    <kp value="100000.0" />
-    <kd value="10.0" />
+  <!-- Fixed Front Wheels -->
+<gazebo reference="front_left_wheel">
+    <mu1 value="0.0001" />
+    <mu2 value="0.0001" />
+    <!-- <kp value="500000.0" />
+    <kd value="50.0" />
+    <fdir1 value="0 0 0" /> -->
+</gazebo>
+
+<gazebo reference="front_right_wheel">
+    <mu1 value="0.0001" />
+    <mu2 value="0.0001" />
+    <!-- <kp value="500000.0" />
+    <kd value="50.0" />
+    <fdir1 value="0 0 0" /> -->
+</gazebo>
+
+<!-- Powered Rear Wheels -->
+<gazebo reference="rear_left_wheel">
+    <mu1 value="0.6" />
+    <mu2 value="0.6" />
+    <kp value="1000000.0" />
+    <kd value="100.0" />
     <fdir1 value="1 0 0" />
-  </gazebo>
+</gazebo>
 
-  <gazebo reference="front_right_wheel">
-    <mu1 value="0.8" />
-    <mu2 value="0.8" />
-    <kp value="100000.0" />
-    <kd value="10.0" />
+<gazebo reference="rear_right_wheel">
+    <mu1 value="0.6" />
+    <mu2 value="0.6" />
+    <kp value="1000000.0" />
+    <kd value="100.0" />
     <fdir1 value="1 0 0" />
-  </gazebo>
+</gazebo>
 
-  <gazebo reference="rear_left_wheel">
-    <mu1 value="0.8" />
-    <mu2 value="0.8" />
-    <kp value="100000.0" />
-    <kd value="10.0" />
-    <fdir1 value="1 0 0" />
-  </gazebo>
 
-  <gazebo reference="rear_right_wheel">
-    <mu1 value="0.8" />
-    <mu2 value="0.8" />
-    <kp value="100000.0" />
-    <kd value="10.0" />
-    <fdir1 value="1 0 0" />
-  </gazebo>
-
-  <transmission
+  <!-- <transmission
     name="front_left_wheel_trans" type="SimpleTransmission">
     <type>transmission_interface/SimpleTransmission</type>
     <actuator name="front_left_wheel_motor">
@@ -433,7 +480,7 @@
     <joint name="front_right_wheel_joint">
       <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
     </joint>
-  </transmission>
+  </transmission> -->
 
   <transmission
     name="rear_left_wheel_trans" type="SimpleTransmission">

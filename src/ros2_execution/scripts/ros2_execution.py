@@ -39,10 +39,10 @@ from std_msgs.msg import String
 import os
 import ast
 import time
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, PointStamped
 from nav2_msgs.action import NavigateToPose
 from rclpy.task import Future
-
+import tf2_ros
 # Import ACTIONS:
 from ros2_data.action import MoveJ
 from ros2_data.action import MoveJs
@@ -307,8 +307,8 @@ class MoveXYZclient(Node):
         # 1. Assign variables:
         goal_msg = MoveXYZ.Goal()
         goal_msg.positionx = GoalXYZx
-        goal_msg.positionx = GoalXYZy
-        goal_msg.positionx = GoalXYZz
+        goal_msg.positiony = GoalXYZy
+        goal_msg.positionz = GoalXYZz
         goal_msg.speed = JointSPEED         
         # 2. ACTION CALL:
         self._send_goal_future = self._action_client.send_goal_async(goal_msg, feedback_callback=self.feedback_callback)
@@ -574,39 +574,115 @@ class PosePub(Node):
         self.publisher.publish(pose)
         self.get_logger().info(f'Published Pose: {pose}')
         
+
 class NavigationClient(Node):
     def __init__(self):
         super().__init__('navigation_client')
         self.client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
         self.goal_future = None
+        self.result_future = None
 
-    def send_goal(self, goal_pose):
+    def send_goal(self, goal_pose: PoseStamped):
+        """ Sends a navigation goal and waits for response. """
         goal_msg = NavigateToPose.Goal()
         goal_msg.pose = goal_pose
 
+        self.get_logger().info("Waiting for Nav2 action server...")
         self.client.wait_for_server()
+        self.get_logger().info("Nav2 action server available. Sending goal...")
+
         self.goal_future = self.client.send_goal_async(goal_msg, feedback_callback=self.feedback_callback)
         self.goal_future.add_done_callback(self.goal_response_callback)
 
-    def goal_response_callback(self, future):
-        goal_handle = future.result()
-        if not goal_handle.accepted:
-            self.get_logger().info("Goal rejected")
+    def goal_response_callback(self, future: Future):
+        """ Handles response from the action server. """
+        if not future.done():
+            self.get_logger().error("Goal response future not completed.")
             return
-        
-        self.get_logger().info("Goal accepted")
+
+        goal_handle = future.result()
+        if not goal_handle or not goal_handle.accepted:
+            self.get_logger().error("Goal rejected by Nav2.")
+            return
+
+        self.get_logger().info("Goal accepted by Nav2, waiting for result...")
         self.result_future = goal_handle.get_result_async()
         self.result_future.add_done_callback(self.result_callback)
 
     def result_callback(self, future: Future):
+        """ Handles result once the goal is reached or fails. """
+        if not future.done():
+            self.get_logger().error("Result future not completed.")
+            return
+
         result = future.result()
-        if result:
+        if result and result.result == 0:  # SUCCESS
             self.get_logger().info("Goal reached successfully!")
         else:
-            self.get_logger().info("Goal failed or was canceled.")
+            self.get_logger().error("Goal failed or was canceled.")
 
     def feedback_callback(self, feedback_msg):
-        self.get_logger().info(f"Remaining distance: {feedback_msg.feedback.distance_remaining:.2f} meters")
+        global RES
+        """ Logs navigation feedback such as distance remaining. """
+        remaining_distance = feedback_msg.feedback.distance_remaining
+        self.get_logger().info(f"Remaining distance: {remaining_distance:.2f} meters")
+        if remaining_distance < .25 and not remaining_distance < 0.0000001:
+            RES = "pass"
+
+    def cancel_goal(self):
+        """ Cancels the active goal if needed. """
+        if self.goal_future and self.goal_future.done():
+            goal_handle = self.goal_future.result()
+            if goal_handle and goal_handle.accepted:
+                self.get_logger().info("Canceling the goal...")
+                cancel_future = goal_handle.cancel_goal_async()
+                cancel_future.add_done_callback(self.cancel_callback)
+
+    def cancel_callback(self, future: Future):
+        """ Handles goal cancellation. """
+        if future.done() and future.result().return_code == 0:
+            self.get_logger().info("Goal successfully canceled.")
+        else:
+            self.get_logger().error("Failed to cancel goal.")
+
+
+
+
+class TransformPoint(Node):
+    def __init__(self):
+        super().__init__('transform_point')
+        
+        self.tf_buffer = tf2_ros.Buffer()
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
+
+    def transform_coordinates(self,src, target, x, y, z):
+        try:
+            # Wait for transform to be available
+            self.tf_buffer.can_transform(target, src, rclpy.time.Time(), timeout=rclpy.duration.Duration(seconds=2))
+
+            # Lookup the transform from map to base_link
+            transform = self.tf_buffer.lookup_transform(target, src, rclpy.time.Time())
+
+            # Create a point in the map frame
+            point_in_map = PointStamped()
+            point_in_map.header.frame_id = src
+            point_in_map.child_frame_id = target
+
+            point_in_map.header.stamp = self.get_clock().now().to_msg()
+            point_in_map.point.x = x
+            point_in_map.point.y = y
+            point_in_map.point.z = z
+
+            # Transform point to base_link frame
+            transformed_point = tf2_ros.do_transform_point(point_in_map, transform)
+
+            self.get_logger().info(f"Transformed Point: x={transformed_point.point.x}, y={transformed_point.point.y}, z={transformed_point.point.z}")
+            return transformed_point
+
+        except Exception as e:
+            self.get_logger().error(f"Transform failed: {str(e)}")
+            return None
+
 
 # ===== INPUT PARAMETERS ===== #
 
@@ -779,6 +855,7 @@ def main(args=None):
 
     pose_publisher = PosePub()
     navigate_CLIENT = NavigationClient()
+    point_transform = TransformPoint()
 
 
     #  3. GET PROGRAM FILENAME:
@@ -1287,42 +1364,42 @@ def main(args=None):
             print("STEP NUMBER " + str(i) + " -> navigate:")
             print(trigger['value'])
 
-            msg = PoseStamped()
-            msg.header.stamp = pose_publisher.get_clock().now().to_msg()
-            msg.header.frame_id = "map"  # Reference frame
+            # msg = PoseStamped()
+            # msg.header.stamp = pose_publisher.get_clock().now().to_msg()
+            # msg.header.frame_id = "map"  # Reference frame
 
-            msg.pose.position.x = trigger['value']['x']
-            msg.pose.position.y = trigger['value']['y']
-            msg.pose.position.z = 0.0
+            # msg.pose.position.x = trigger['value']['x']
+            # msg.pose.position.y = trigger['value']['y']
+            # msg.pose.position.z = 0.0
 
-            msg.pose.orientation.x = 0.0
-            msg.pose.orientation.y = 0.0
-            msg.pose.orientation.z = 0.0
-            msg.pose.orientation.w = trigger['value']['w']  # No rotation (identity quaternion)
-            pose_publisher.pub_pose(msg)
+            # msg.pose.orientation.x = 0.0
+            # msg.pose.orientation.y = 0.0
+            # msg.pose.orientation.z = 0.0
+            # msg.pose.orientation.w = trigger['value']['w']  # No rotation (identity quaternion)
+            # pose_publisher.pub_pose(msg)
 
             # if rclpy.ok():
             #     rclpy.spin_once(pose_publisher, timeout_sec=5)
                 
 
 
-            # goal_pose = PoseStamped()
-            # goal_pose.header.frame_id = "map"
-            # goal_pose.header.stamp = navigate_CLIENT.get_clock().now().to_msg()
-            # goal_pose.pose.position.x = trigger['value']['x']
-            # goal_pose.pose.position.y = trigger['value']['y']
-            # goal_pose.pose.orientation.w = trigger['value']['w'] 
+            goal_pose = PoseStamped()
+            goal_pose.header.frame_id = "map"
+            goal_pose.header.stamp = navigate_CLIENT.get_clock().now().to_msg()
+            goal_pose.pose.position.x = trigger['value']['x']
+            goal_pose.pose.position.y = trigger['value']['y']
+            goal_pose.pose.orientation.w = trigger['value']['w'] 
 
-            # navigate_CLIENT.send_goal(goal_pose)
+            navigate_CLIENT.send_goal(goal_pose)
 
-            # if rclpy.ok():
-            #     rclpy.spin_once(navigate_CLIENT, timeout_sec=5)
-            #     if (RES != "null"):
-            #         break
+            while rclpy.ok():
+                rclpy.spin_once(navigate_CLIENT)
+                if (RES != "null"):
+                    break
             
-            rclpy.spin(navigate_CLIENT)
+            # rclpy.spin(navigate_CLIENT)
             print ("Result of navigate ACTION CALL is -> { " + RES + " }")
-            
+            RES = "null"
             # if (RES == "navigate:SUCCESS"):
             #     print("navigate ACTION in step number -> " + str(i) + " successfully executed.")
             #     RES = "null"
@@ -1333,6 +1410,32 @@ def main(args=None):
             #     break
 
             print("Robot moved successfully.")
+
+            transformed_point = point_transform.transform_coordinates('map', 'base_footprint', 3.5, -1.5, 1.0)  # Example input coordinates
+            rclpy.spin(point_transform)
+            JointSPEED = 1.0
+            positionx = transformed_point.point.x
+            positiony = transformed_point.point.y
+            positionz = transformed_point.point.z
+            MoveXYZ_CLIENT.send_goal(positionx,positiony,positionz, JointSPEED)
+
+            while rclpy.ok():
+                rclpy.spin_once(MoveXYZ_CLIENT)
+                if (RES != "null"):
+                    break
+
+
+            print ("Result of MoveXYZ ACTION CALL is -> { " + RES + " }")
+            
+            if (RES == "MoveXYZ:SUCCESS"):
+                print("MoveXYZ ACTION in step number -> " + str(i) + " successfully executed.")
+                RES = "null"
+            else:
+                print("MoveXYZ ACTION in step number -> " + str(i) + " failed.")
+                nodeLOG.get_logger().info("ERROR: Program finished since MoveXYZ ACTION in step number -> " + str(i) + " failed.")
+                print("The program will be closed. Bye!")
+                break
+
         else:
             print("Step number " + str(i) + "with action" + trigger['action'] + " -> Action type not identified. Please check.")
             print("The program will be closed. Bye!")
